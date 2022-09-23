@@ -27,10 +27,7 @@ import id.walt.webwallet.backend.auth.JWTService
 import id.walt.webwallet.backend.auth.UserInfo
 import id.walt.webwallet.backend.auth.UserRole
 import io.javalin.apibuilder.ApiBuilder.*
-import io.javalin.http.BadRequestResponse
-import io.javalin.http.Context
-import io.javalin.http.ForbiddenResponse
-import io.javalin.http.HttpCode
+import io.javalin.http.*
 import io.javalin.plugin.openapi.dsl.document
 import io.javalin.plugin.openapi.dsl.documented
 import java.net.URI
@@ -150,6 +147,14 @@ object IssuerController {
               .formParam<Proof>("proof")
               .json<CredentialResponse>("200"),
             IssuerController::credential
+          ))
+          post("issuer-credential", documented(
+            document().operation {
+              it.summary("Issuer Credential endpoint").operationId("issuer-credential").addTagsItem("Issuer").description("Add an issuer endpoints")
+            }
+              .body<CredentialIssuerResponse>()
+              .json<CredentialIssuerResponse>("201"),
+            IssuerController::issuerCredential
           ))
         }
       }
@@ -299,5 +304,13 @@ object IssuerController {
       return
     }
     ctx.json(CredentialResponse(format, Base64.getUrlEncoder().encodeToString(credential.toByteArray(StandardCharsets.UTF_8))))
+  }
+
+  private fun issuerCredential(ctx: Context) {
+    val body = ctx.bodyAsClass<CredentialIssuerResponse>()
+    println(body.id)
+    println(body.url)
+    println(body.description)
+    ctx.json(CredentialIssuerResponse(body.id, body.url, body.description)).contentType(ContentType.APPLICATION_JSON).status(201)
   }
 }
