@@ -148,14 +148,6 @@ object IssuerController {
               .json<CredentialResponse>("200"),
             IssuerController::credential
           ))
-          post("issuer-credential", documented(
-            document().operation {
-              it.summary("Issuer Credential endpoint").operationId("issuer-credential").addTagsItem("Issuer").description("Add an issuer endpoints")
-            }
-              .body<CredentialIssuerResponse>()
-              .json<CredentialIssuerResponse>("201"),
-            IssuerController::issuerCredential
-          ))
         }
       }
 
@@ -306,13 +298,4 @@ object IssuerController {
     ctx.json(CredentialResponse(format, Base64.getUrlEncoder().encodeToString(credential.toByteArray(StandardCharsets.UTF_8))))
   }
 
-  private fun issuerCredential(ctx: Context) {
-    val body = ctx.bodyAsClass<CredentialIssuerResponse>()
-//    println(body.id)
-//    println(body.url)
-//    println(body.description)
-    val response = CredentialIssuerResponse(body.id, body.url, body.description)
-    println(response.toString())
-    ctx.json(response).contentType(ContentType.APPLICATION_JSON).status(201)
-  }
 }

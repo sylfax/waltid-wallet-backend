@@ -1,6 +1,7 @@
 package id.walt.webwallet.backend.wallet
 
 import id.walt.crypto.KeyAlgorithm
+import id.walt.issuer.backend.CredentialIssuerResponse
 import id.walt.model.DidMethod
 import id.walt.model.oidc.SIOPv2Request
 import id.walt.model.oidc.klaxon
@@ -16,6 +17,7 @@ import id.walt.webwallet.backend.auth.UserRole
 import id.walt.webwallet.backend.config.WalletConfig
 import io.javalin.apibuilder.ApiBuilder.*
 import io.javalin.http.BadRequestResponse
+import io.javalin.http.ContentType
 import io.javalin.http.Context
 import io.javalin.http.HttpCode
 import io.javalin.plugin.openapi.dsl.document
@@ -181,6 +183,19 @@ object WalletController {
                         ),
                         UserRole.UNAUTHORIZED
                     )
+                    post(
+                        "", documented(
+                            document().operation {
+                                it.summary("Add a new issuer").addTagsItem("siop")
+                                    .operationId("addIssuer")
+
+                            }
+                                .body<CredentialIssuerResponse>()
+                                .json<CredentialIssuerResponse>("201"),
+                            WalletController::addIssuer
+                        ),
+                        UserRole.UNAUTHORIZED
+                    )
                     get("metadata", documented(
                         document().operation {
                             it.summary("get issuer meta data").addTagsItem("siop").operationId("issuerMeta")
@@ -243,17 +258,21 @@ object WalletController {
                     return
                 }
 
-                val did = DidService.create(req.method, keyId ?: KeyService.getService().generate(KeyAlgorithm.ECDSA_Secp256k1).id)
+                val did = DidService.create(
+                    req.method,
+                    keyId ?: KeyService.getService().generate(KeyAlgorithm.ECDSA_Secp256k1).id
+                )
                 EssifClient.onboard(did, req.didEbsiBearerToken)
                 EssifClient.authApi(did)
                 DidEbsiService.getService().registerDid(did, did)
                 ctx.result(did)
             }
+
             DidMethod.web -> {
                 val didRegistryAuthority = URI.create(WalletConfig.config.walletApiUrl).authority
                 val didDomain = req.didWebDomain.orEmpty().ifEmpty { didRegistryAuthority }
 
-                val didWebKeyId= keyId ?: KeyService.getService().generate(KeyAlgorithm.EdDSA_Ed25519).id
+                val didWebKeyId = keyId ?: KeyService.getService().generate(KeyAlgorithm.EdDSA_Ed25519).id
 
                 val didStr = DidService.create(
                     req.method,
@@ -273,6 +292,7 @@ object WalletController {
                 }
                 ctx.result(didStr)
             }
+
             DidMethod.key -> {
 
                 ctx.result(
@@ -373,5 +393,15 @@ object WalletController {
             return
         }
         ctx.json(issuanceSession)
+    }
+
+    private fun addIssuer(ctx: Context) {
+        val body = ctx.bodyAsClass<CredentialIssuerResponse>()
+//    println(body.id)
+//    println(body.url)
+//    println(body.description)
+        val response = CredentialIssuerResponse(body.id, body.url, body.description)
+        println(response.toString())
+        ctx.json(response).contentType(ContentType.APPLICATION_JSON).status(201)
     }
 }
