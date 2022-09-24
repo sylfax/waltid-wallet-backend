@@ -22,6 +22,7 @@ import io.javalin.http.Context
 import io.javalin.http.HttpCode
 import io.javalin.plugin.openapi.dsl.document
 import io.javalin.plugin.openapi.dsl.documented
+import java.io.File
 import java.net.URI
 
 object WalletController {
@@ -402,6 +403,15 @@ object WalletController {
 //    println(body.description)
         val response = CredentialIssuerResponse(body.id, body.url, body.description)
         println(response.toString())
+        // insert into CONFIG_FILE the new issuer
+        val CONFIG_FILE = "${id.walt.WALTID_DATA_ROOT}/config/wallet-config.json"
+        val cf = File(CONFIG_FILE)
+        if (cf.exists()) {
+            println("find the file !!")
+        }
+        else {
+            println("FIle not exists!!")
+        }
         ctx.json(response).contentType(ContentType.APPLICATION_JSON).status(201)
     }
 }
