@@ -308,9 +308,11 @@ object IssuerController {
 
   private fun issuerCredential(ctx: Context) {
     val body = ctx.bodyAsClass<CredentialIssuerResponse>()
-    println(body.id)
-    println(body.url)
-    println(body.description)
-    ctx.json(CredentialIssuerResponse(body.id, body.url, body.description)).contentType(ContentType.APPLICATION_JSON).status(201)
+//    println(body.id)
+//    println(body.url)
+//    println(body.description)
+    val response = CredentialIssuerResponse(body.id, body.url, body.description)
+    println(response.toString())
+    ctx.json(response).contentType(ContentType.APPLICATION_JSON).status(201)
   }
 }
