@@ -3,6 +3,7 @@ package id.walt.webwallet.backend.wallet
 import com.beust.klaxon.JsonObject
 import com.beust.klaxon.Klaxon
 import com.beust.klaxon.Parser
+import com.fasterxml.jackson.databind.ObjectMapper
 import id.walt.crypto.KeyAlgorithm
 import id.walt.issuer.backend.CredentialIssuerResponse
 import id.walt.model.DidMethod
@@ -27,8 +28,8 @@ import io.javalin.plugin.openapi.dsl.document
 import io.javalin.plugin.openapi.dsl.documented
 import net.minidev.json.JSONObject
 import java.io.File
-import java.lang.StringBuilder
 import java.net.URI
+import kotlin.text.StringBuilder
 
 object WalletController {
     val routes
@@ -403,26 +404,46 @@ object WalletController {
 
     private fun addIssuer(ctx: Context) {
         val body = ctx.bodyAsClass<CredentialIssuerResponse>()
+        val parser = Parser.default()
         // check if the CONFIG_FILE exists
         val CONFIG_FILE = "${id.walt.WALTID_DATA_ROOT}/config/wallet-config.json"
         val cf = File(CONFIG_FILE)
         if (!cf.exists()) {
             println("FIle not exists!!")
+            val stringBuilder: StringBuilder = StringBuilder("{\"msg\":\"Config file not exists!\"}")
+            val jsonMsg: JsonObject = parser.parse(stringBuilder) as JsonObject
+            ctx.json(jsonMsg).contentType(ContentType.APPLICATION_JSON).status(400)
+            return
         }
         else {
             // the file exists
             // load the file
-            val parser = Parser()
             val json: JsonObject = parser.parse(cf.absolutePath) as JsonObject
-            val jsonMap: MutableMap<String, Any?> = json.map
-            val keys:MutableSet<String> = jsonMap.keys
-            println("hello")
-//            println("walletUiUrl : ${json.string("walletUiUrl")}")
-//            println("walletApiUrl : ${json.string("walletApiUrl")}")
-            // go through the issuers structure
+//            val jsonMap: MutableMap<String, Any?> = json.map
+            val keys:MutableSet<String> = (json["issuers"] as JsonObject).keys      // keys of issuers
+            if (!keys.contains(body.id)) {
+                println("key not exists ..  adding it")
+                val stringBuilder: StringBuilder = java.lang.StringBuilder(
+                    "{\"id\":\"" + body.id + "\"," +
+                          "\"url\":\"" + body.url + "\"," +
+                            "\"description\":\"" + body.description + "\"," +
+                            "}"
+                )
+                val jsonMsg: JsonObject = parser.parse(stringBuilder) as JsonObject
+                (json["issuers"] as JsonObject).put(body.id!!, jsonMsg)
+                // save the new json
+                val mapper = ObjectMapper()
+                mapper.writeValue(File(CONFIG_FILE), json)
+                // return
+                val response = CredentialIssuerResponse(body.id, body.url, body.description)
+                ctx.json(json).contentType(ContentType.APPLICATION_JSON).status(201)
+            }
+            else {
+                val stringBuilder: StringBuilder = StringBuilder("{\"msg\":\"ID already exists!\"}")
+                val jsonMsg: JsonObject = parser.parse(stringBuilder) as JsonObject
+                ctx.json(jsonMsg).contentType(ContentType.APPLICATION_JSON).status(400)
+                return
+           }
         }
-        val response = CredentialIssuerResponse(body.id, body.url, body.description)
-//        println(response.toString())
-        ctx.json(response).contentType(ContentType.APPLICATION_JSON).status(201)
     }
 }
