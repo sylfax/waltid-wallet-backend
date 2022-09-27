@@ -1,5 +1,8 @@
 package id.walt.webwallet.backend.wallet
 
+import com.beust.klaxon.JsonObject
+import com.beust.klaxon.Klaxon
+import com.beust.klaxon.Parser
 import id.walt.crypto.KeyAlgorithm
 import id.walt.issuer.backend.CredentialIssuerResponse
 import id.walt.model.DidMethod
@@ -22,7 +25,9 @@ import io.javalin.http.Context
 import io.javalin.http.HttpCode
 import io.javalin.plugin.openapi.dsl.document
 import io.javalin.plugin.openapi.dsl.documented
+import net.minidev.json.JSONObject
 import java.io.File
+import java.lang.StringBuilder
 import java.net.URI
 
 object WalletController {
@@ -398,20 +403,26 @@ object WalletController {
 
     private fun addIssuer(ctx: Context) {
         val body = ctx.bodyAsClass<CredentialIssuerResponse>()
-//    println(body.id)
-//    println(body.url)
-//    println(body.description)
-        val response = CredentialIssuerResponse(body.id, body.url, body.description)
-        println(response.toString())
-        // insert into CONFIG_FILE the new issuer
+        // check if the CONFIG_FILE exists
         val CONFIG_FILE = "${id.walt.WALTID_DATA_ROOT}/config/wallet-config.json"
         val cf = File(CONFIG_FILE)
-        if (cf.exists()) {
-            println("find the file !!")
-        }
-        else {
+        if (!cf.exists()) {
             println("FIle not exists!!")
         }
+        else {
+            // the file exists
+            // load the file
+            val parser = Parser()
+            val json: JsonObject = parser.parse(cf.absolutePath) as JsonObject
+            val jsonMap: MutableMap<String, Any?> = json.map
+            val keys:MutableSet<String> = jsonMap.keys
+            println("hello")
+//            println("walletUiUrl : ${json.string("walletUiUrl")}")
+//            println("walletApiUrl : ${json.string("walletApiUrl")}")
+            // go through the issuers structure
+        }
+        val response = CredentialIssuerResponse(body.id, body.url, body.description)
+//        println(response.toString())
         ctx.json(response).contentType(ContentType.APPLICATION_JSON).status(201)
     }
 }
