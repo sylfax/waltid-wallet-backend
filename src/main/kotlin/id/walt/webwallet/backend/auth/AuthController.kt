@@ -1,5 +1,7 @@
 package id.walt.webwallet.backend.auth
 
+import com.beust.klaxon.JsonObject
+import com.beust.klaxon.Parser
 import com.google.gson.Gson
 import id.walt.WALTID_DATA_ROOT
 import id.walt.model.DidMethod
@@ -7,6 +9,7 @@ import id.walt.services.context.ContextManager
 import id.walt.services.did.DidService
 import id.walt.webwallet.backend.context.WalletContextManager
 import io.javalin.apibuilder.ApiBuilder.*
+import io.javalin.http.ContentType
 import io.javalin.http.Context
 import io.javalin.plugin.openapi.dsl.document
 import io.javalin.plugin.openapi.dsl.documented
@@ -54,15 +57,34 @@ object AuthController {
 
     fun login(ctx: Context) {
         val userInfo = ctx.bodyAsClass(UserInfo::class.java)
-        // TODO: verify login credentials!!
-        ContextManager.runWith(WalletContextManager.getUserContext(userInfo)) {
-            if(DidService.listDids().isEmpty()) {
-                DidService.create(DidMethod.key)
+        val userDirectory = Paths.get(WALTID_DATA_ROOT + File.separator + "data" + File.separator + userInfo.email)
+        if (Files.isDirectory(userDirectory)) {
+            log.debug { "Account exists!" }
+            ContextManager.runWith(WalletContextManager.getUserContext(userInfo)) {
+                if(DidService.listDids().isEmpty()) {
+                    DidService.create(DidMethod.key)
+                }
             }
+            ctx.json(UserInfo(userInfo.id).apply {
+                token = JWTService.toJWT(userInfo)
+            })
         }
-        ctx.json(UserInfo(userInfo.id).apply {
-            token = JWTService.toJWT(userInfo)
-        })
+        else {
+            // User not exists!
+            log.debug { "Account not exists!" }
+            val parser = Parser.default()
+            val stringBuilder: StringBuilder = StringBuilder("Unable to find this account! Check your credentials.")
+//            val jsonMsg: JsonObject = parser.parse(stringBuilder) as JsonObject
+            ctx.result(stringBuilder.toString()).contentType(ContentType.TEXT_PLAIN).status(404)
+        }
+//        ContextManager.runWith(WalletContextManager.getUserContext(userInfo)) {
+//            if(DidService.listDids().isEmpty()) {
+//                DidService.create(DidMethod.key)
+//            }
+//        }
+//        ctx.json(UserInfo(userInfo.id).apply {
+//            token = JWTService.toJWT(userInfo)
+//        })
     }
 
     fun register(ctx: Context) {
@@ -76,7 +98,9 @@ object AuthController {
 //        log.debug { userDirectory }
         if (Files.isDirectory(userDirectory)) {
             log.debug { "User already exists!" }
-            ctx.status(409)
+            val parser = Parser.default()
+            val stringBuilder: StringBuilder = StringBuilder("Account already exists!")
+            ctx.result(stringBuilder.toString()).contentType(ContentType.TEXT_PLAIN).status(409)
         } else {
             log.debug { "User doesn't exists! Creation of the account" }
             ContextManager.runWith(WalletContextManager.getUserContext(userInfo)) {
@@ -88,8 +112,8 @@ object AuthController {
                 token = JWTService.toJWT(userInfo)
                 userInfo.token = token
             })
-            log.debug { userInfo.token }
-            log.debug { userInfo.firstName }
+ //           log.debug { userInfo.token }
+ //           log.debug { userInfo.firstName }
             userInfo.password = ""
             ctx.status(201)
             ctx.result(Gson().toJson(userInfo))
