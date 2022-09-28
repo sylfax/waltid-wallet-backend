@@ -439,9 +439,8 @@ object WalletController {
                 ctx.json(json).contentType(ContentType.APPLICATION_JSON).status(201)
             }
             else {
-                val stringBuilder: StringBuilder = StringBuilder("{\"msg\":\"ID already exists!\"}")
-                val jsonMsg: JsonObject = parser.parse(stringBuilder) as JsonObject
-                ctx.json(jsonMsg).contentType(ContentType.APPLICATION_JSON).status(400)
+                val stringBuilder: StringBuilder = StringBuilder("ID already exists!")
+                ctx.result(stringBuilder.toString()).contentType(ContentType.TEXT_PLAIN).status(400)
                 return
            }
         }
