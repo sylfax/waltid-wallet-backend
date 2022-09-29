@@ -20,7 +20,11 @@ object JWTService : AccessManager {
     val provider = JWTProvider(
         algorithm,
         { user: UserInfo, alg: Algorithm? ->
-            JWT.create().withSubject(user.id).sign(alg)
+            JWT.create()
+                .withSubject(user.id)
+                .withClaim("firstName", user.firstName)
+                .withClaim("lastName", user.lastName)
+                .sign(alg)
         },
         JWT.require(algorithm).build()
     )
@@ -33,7 +37,7 @@ object JWTService : AccessManager {
     }
 
     fun fromJwt(jwt: DecodedJWT): UserInfo {
-        return UserInfo(jwt.subject).apply {
+        return UserInfo(jwt.subject, jwt.getClaim("firstName").asString(), jwt.getClaim("lastName").asString()).apply {
             token = jwt.token
         }
     }

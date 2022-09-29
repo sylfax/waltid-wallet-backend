@@ -100,6 +100,8 @@ object RestAPI {
   fun start(bindAddress: String, port: Int, accessManager: AccessManager, routes: () -> Unit= DEFAULT_ROUTES): Javalin {
     val javalin = createJavalin(accessManager)
     javalin.routes(routes)
+    println("binding adress: $bindAddress")
+    println("port: $port")
     javalin.start(bindAddress, port)
     println("web wallet backend started at: http://$bindAddress:$port")
     println("swagger docs are hosted at: http://$bindAddress:$port/api/swagger")

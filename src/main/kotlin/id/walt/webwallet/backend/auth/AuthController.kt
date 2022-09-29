@@ -65,7 +65,8 @@ object AuthController {
                     DidService.create(DidMethod.key)
                 }
             }
-            ctx.json(UserInfo(userInfo.id).apply {
+            // add the firstname & lastname from the directory
+            ctx.json(UserInfo(userInfo.id, userInfo.firstName, userInfo.lastName).apply {
                 token = JWTService.toJWT(userInfo)
             })
         }
@@ -98,7 +99,7 @@ object AuthController {
 //        log.debug { userDirectory }
         if (Files.isDirectory(userDirectory)) {
             log.debug { "User already exists!" }
-            val parser = Parser.default()
+//            val parser = Parser.default()
             val stringBuilder: StringBuilder = StringBuilder("Account already exists!")
             ctx.result(stringBuilder.toString()).contentType(ContentType.TEXT_PLAIN).status(409)
         } else {
@@ -108,13 +109,15 @@ object AuthController {
                     DidService.create(DidMethod.key)
                 }
             }
-            ctx.json(UserInfo(userInfo.id).apply {
+            ctx.json(UserInfo(userInfo.id, userInfo.firstName, userInfo.lastName).apply {
                 token = JWTService.toJWT(userInfo)
                 userInfo.token = token
             })
  //           log.debug { userInfo.token }
  //           log.debug { userInfo.firstName }
             userInfo.password = ""
+            // store the userinfo into the user directory
+
             ctx.status(201)
             ctx.result(Gson().toJson(userInfo))
         }

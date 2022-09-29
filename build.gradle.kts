@@ -19,7 +19,7 @@ repositories {
 }
 
 dependencies {
-    implementation("io.javalin:javalin-bundle:4.3.0")
+    implementation("io.javalin:javalin-bundle:4.6.1")
     implementation("com.github.kmehrunes:javalin-jwt:0.3")
     implementation("com.beust:klaxon:5.5")
     implementation("com.nimbusds:oauth2-oidc-sdk:9.27")

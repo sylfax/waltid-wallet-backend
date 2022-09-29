@@ -1,10 +1,10 @@
 package id.walt.webwallet.backend.auth
 
 class UserInfo(
-    val id: String
-) {
-    var firstName: String? = null
+    val id: String,
+    var firstName: String? = null,
     var lastName: String ? = null
+) {
     var email: String? = null
     var password: String? = null
     var token: String? = null
