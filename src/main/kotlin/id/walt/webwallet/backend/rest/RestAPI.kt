@@ -27,10 +27,13 @@ import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.oas.models.security.SecurityScheme
 import io.swagger.v3.oas.models.servers.Server
 import mu.KotlinLogging
+import org.eclipse.jetty.server.ServerConnector
+import org.eclipse.jetty.util.ssl.SslContextFactory
 
 object RestAPI {
 
   private val log = KotlinLogging.logger {}
+  var LIST_SSL_ENABLED: String = System.getenv("LIST_SSL_ENABLED") ?: "false"
 
   val DEFAULT_ROUTES = {
     ApiBuilder.path("api") {
@@ -53,6 +56,14 @@ object RestAPI {
 
   fun createJavalin(accessManager: AccessManager): Javalin = Javalin.create { config ->
       config.apply {
+
+        // SSL
+        println("LIST_SSL_ENABLED: $LIST_SSL_ENABLED")
+        if (LIST_SSL_ENABLED.toBoolean()) {
+          enforceSsl = true
+          println("SSL activated")
+        }
+
         enableDevLogging()
         enableCorsForAllOrigins()
         requestLogger { ctx, ms ->
@@ -99,6 +110,13 @@ object RestAPI {
 
   fun start(bindAddress: String, port: Int, accessManager: AccessManager, routes: () -> Unit= DEFAULT_ROUTES): Javalin {
     val javalin = createJavalin(accessManager)
+    // SSL
+    if (LIST_SSL_ENABLED.toBoolean()) {
+      val sslConnector = ServerConnector(javalin.jettyServer()?.server(), getSslContextFactory())
+      sslConnector.port = port
+      javalin.jettyServer()?.server()?.connectors = arrayOf(sslConnector)
+      println("sslConnector activated")
+    }
     javalin.routes(routes)
     println("binding adress: $bindAddress")
     println("port: $port")
@@ -107,4 +125,12 @@ object RestAPI {
     println("swagger docs are hosted at: http://$bindAddress:$port/api/swagger")
     return javalin
   }
+
+  private fun getSslContextFactory(): SslContextFactory.Server? {
+    val sslContextFactory = SslContextFactory.Server()
+    sslContextFactory.keyStorePath = RestAPI::class.java.getResource("/itd-ebsilux-iss_list_lu.pkcs12").toExternalForm()
+    sslContextFactory.setKeyStorePassword("mdp!sfx")
+    return sslContextFactory
+  }
+
 }

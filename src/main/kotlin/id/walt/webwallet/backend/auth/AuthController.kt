@@ -2,6 +2,9 @@ package id.walt.webwallet.backend.auth
 
 import com.beust.klaxon.JsonObject
 import com.beust.klaxon.Parser
+import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.JsonSerializable
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.gson.Gson
 import id.walt.WALTID_DATA_ROOT
 import id.walt.model.DidMethod
@@ -66,6 +69,20 @@ object AuthController {
                 }
             }
             // add the firstname & lastname from the directory
+//            val userDirectory = Paths.get(WALTID_DATA_ROOT + File.separator + "data" + File.separator + userInfo.email)
+            val accountFile = "$userDirectory/account.json"     // account will store the firstName & lastName
+            val cf = File(accountFile)      // get the file
+            if (!cf.exists()) {         // file doesn't exists!!
+                val stringBuilder: StringBuilder = StringBuilder("Unable to find this account! Check your credentials.")
+//            val jsonMsg: JsonObject = parser.parse(stringBuilder) as JsonObject
+                ctx.result(stringBuilder.toString()).contentType(ContentType.TEXT_PLAIN).status(404)
+                return
+            }
+            val mapper = ObjectMapper()
+            val jsonNode: JsonNode = mapper.readTree(cf)
+            userInfo.firstName = jsonNode.get("firstName").asText()
+            userInfo.lastName = jsonNode.get("lastName").asText()
+            println("userInfo: $userInfo")
             ctx.json(UserInfo(userInfo.id, userInfo.firstName, userInfo.lastName).apply {
                 token = JWTService.toJWT(userInfo)
             })
@@ -78,14 +95,6 @@ object AuthController {
 //            val jsonMsg: JsonObject = parser.parse(stringBuilder) as JsonObject
             ctx.result(stringBuilder.toString()).contentType(ContentType.TEXT_PLAIN).status(404)
         }
-//        ContextManager.runWith(WalletContextManager.getUserContext(userInfo)) {
-//            if(DidService.listDids().isEmpty()) {
-//                DidService.create(DidMethod.key)
-//            }
-//        }
-//        ctx.json(UserInfo(userInfo.id).apply {
-//            token = JWTService.toJWT(userInfo)
-//        })
     }
 
     fun register(ctx: Context) {
@@ -117,7 +126,23 @@ object AuthController {
  //           log.debug { userInfo.firstName }
             userInfo.password = ""
             // store the userinfo into the user directory
-
+            if (Files.isDirectory(userDirectory)) {
+                val accountFile = "$userDirectory/account.json"     // account will store the firstName & lastName
+                val cf = File(accountFile)      // get the file
+                val parser = Parser.default()   // initialize the parser
+                val stringAccount: StringBuilder = java.lang.StringBuilder(
+                    "{\"firstName\":\"" + userInfo.firstName + "\"," +
+                            "\"lastName\":\"" + userInfo.lastName + "\"," +
+                            "}"
+                )
+                val jsonAccount: JsonObject = parser.parse(stringAccount) as JsonObject
+                val mapper = ObjectMapper()
+                mapper.writeValue(cf, jsonAccount)
+                log.debug { "account file is written!" }
+            }
+            else {
+                log.debug { "User directory not exists!" }
+            }
             ctx.status(201)
             ctx.result(Gson().toJson(userInfo))
         }
