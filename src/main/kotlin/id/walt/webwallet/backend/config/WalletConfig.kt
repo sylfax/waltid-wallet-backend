@@ -4,6 +4,7 @@ import com.beust.klaxon.Klaxon
 import id.walt.issuer.backend.IssuerConfig
 import id.walt.model.oidc.OIDCProvider
 import id.walt.verifier.backend.WalletConfiguration
+import mu.KotlinLogging
 import java.io.File
 
 data class WalletConfig(
@@ -11,11 +12,14 @@ data class WalletConfig(
   @ExternalHostnameUrl val walletApiUrl: String = "http://localhost:3000/api",
   var issuers: Map<String, OIDCProvider> = mapOf()
 ) {
+
   companion object {
     val CONFIG_FILE = "${id.walt.WALTID_DATA_ROOT}/config/wallet-config.json"
     val ISSUERS_SECRETS = "${id.walt.WALTID_DATA_ROOT}/secrets/issuers.json"
+    private val log = KotlinLogging.logger {}
     lateinit var config: WalletConfig
     init {
+      log.debug { "Loading WalletConfig..." }
       val cf = File(CONFIG_FILE)
       if(cf.exists()) {
         config = Klaxon().fieldConverter(ExternalHostnameUrl::class, externalHostnameUrlValueConverter).parse<WalletConfig>(cf) ?: WalletConfig()

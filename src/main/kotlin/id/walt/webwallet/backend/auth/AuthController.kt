@@ -82,7 +82,7 @@ object AuthController {
             val jsonNode: JsonNode = mapper.readTree(cf)
             userInfo.firstName = jsonNode.get("firstName").asText()
             userInfo.lastName = jsonNode.get("lastName").asText()
-            println("userInfo: $userInfo")
+//            println("userInfo: $userInfo")
             ctx.json(UserInfo(userInfo.id, userInfo.firstName, userInfo.lastName).apply {
                 token = JWTService.toJWT(userInfo)
             })
@@ -99,18 +99,12 @@ object AuthController {
 
     fun register(ctx: Context) {
         val userInfo = ctx.bodyAsClass(UserInfo::class.java)
-//        log.debug { "id: " + userInfo.id }
-//        log.debug { "first name: " + userInfo.firstName }
-//        log.debug { "last name: " + userInfo.lastName }
-//        log.debug { "email: " + userInfo.email }
-        // check if the account already exists == same email
         val userDirectory = Paths.get(WALTID_DATA_ROOT + File.separator + "data" + File.separator + userInfo.email)
-//        log.debug { userDirectory }
         if (Files.isDirectory(userDirectory)) {
             log.debug { "User already exists!" }
-//            val parser = Parser.default()
+            log.debug { "user email: ${userInfo.email}" }
             val stringBuilder: StringBuilder = StringBuilder("Account already exists!")
-            ctx.result(stringBuilder.toString()).contentType(ContentType.TEXT_PLAIN).status(409)
+            ctx.result(stringBuilder.toString()).contentType(ContentType.TEXT_PLAIN).status(400)
         } else {
             log.debug { "User doesn't exists! Creation of the account" }
             ContextManager.runWith(WalletContextManager.getUserContext(userInfo)) {
