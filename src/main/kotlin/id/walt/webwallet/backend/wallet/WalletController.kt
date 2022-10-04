@@ -18,7 +18,9 @@ import id.walt.services.essif.didebsi.DidEbsiService
 import id.walt.services.key.KeyService
 import id.walt.webwallet.backend.auth.JWTService
 import id.walt.webwallet.backend.auth.UserRole
+import id.walt.webwallet.backend.config.ExternalHostnameUrl
 import id.walt.webwallet.backend.config.WalletConfig
+import id.walt.webwallet.backend.config.externalHostnameUrlValueConverter
 import io.javalin.apibuilder.ApiBuilder.*
 import io.javalin.http.BadRequestResponse
 import io.javalin.http.ContentType
@@ -26,12 +28,14 @@ import io.javalin.http.Context
 import io.javalin.http.HttpCode
 import io.javalin.plugin.openapi.dsl.document
 import io.javalin.plugin.openapi.dsl.documented
+import mu.KotlinLogging
 import net.minidev.json.JSONObject
 import java.io.File
 import java.net.URI
 import kotlin.text.StringBuilder
 
 object WalletController {
+    private val log = KotlinLogging.logger {}
     val routes
         get() = path("wallet") {
             path("did") {
@@ -355,6 +359,15 @@ object WalletController {
     }
 
     fun listIssuers(ctx: Context) {
+        val cf = File(WalletConfig.CONFIG_FILE)
+        if (cf.exists()) {
+            log.debug { "Reloading WalletConfig..." }
+            WalletConfig.config = Klaxon().fieldConverter(ExternalHostnameUrl::class, externalHostnameUrlValueConverter).parse<WalletConfig>(cf) ?: WalletConfig()
+        }
+        else {
+            log.debug { "Wallet config file doesn't exist!!" }
+            WalletConfig.config = WalletConfig()
+        }
         ctx.json(WalletConfig.config.issuers.values)
     }
 

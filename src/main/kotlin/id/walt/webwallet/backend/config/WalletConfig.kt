@@ -21,7 +21,7 @@ data class WalletConfig(
     init {
       log.debug { "Loading WalletConfig..." }
       val cf = File(CONFIG_FILE)
-      if(cf.exists()) {
+      if (cf.exists()) {
         config = Klaxon().fieldConverter(ExternalHostnameUrl::class, externalHostnameUrlValueConverter).parse<WalletConfig>(cf) ?: WalletConfig()
       } else {
         config = WalletConfig()
