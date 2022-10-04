@@ -29,7 +29,6 @@ import io.javalin.http.HttpCode
 import io.javalin.plugin.openapi.dsl.document
 import io.javalin.plugin.openapi.dsl.documented
 import mu.KotlinLogging
-import net.minidev.json.JSONObject
 import java.io.File
 import java.net.URI
 import kotlin.text.StringBuilder
@@ -204,6 +203,16 @@ object WalletController {
                                 .body<CredentialIssuerResponse>()
                                 .json<CredentialIssuerResponse>("201"),
                             WalletController::addIssuer
+                        ),
+                        UserRole.UNAUTHORIZED
+                    )
+                    delete(
+                        "{id}", documented(
+                            document().operation {
+                                it.summary("Delete an issuer").addTagsItem("siop")
+                                    .operationId("deleteIssuer")
+                            },
+                            WalletController::deleteIssuer
                         ),
                         UserRole.UNAUTHORIZED
                     )
@@ -448,7 +457,7 @@ object WalletController {
                 val mapper = ObjectMapper()
                 mapper.writeValue(File(CONFIG_FILE), json)
                 // return
-                val response = CredentialIssuerResponse(body.id, body.url, body.description)
+//                val response = CredentialIssuerResponse(body.id, body.url, body.description)
                 ctx.json(json).contentType(ContentType.APPLICATION_JSON).status(201)
             }
             else {
@@ -457,5 +466,33 @@ object WalletController {
                 return
            }
         }
+    }
+
+    private fun deleteIssuer(ctx: Context) {
+        log.debug { "Deleting an issuer..." }
+        val issuerId = ctx.pathParam("id")
+        log.debug { issuerId }
+        val CONFIG_FILE = "${id.walt.WALTID_DATA_ROOT}/config/wallet-config.json"
+        val cf = File(CONFIG_FILE)
+        if (!cf.exists()) {
+            println("FIle not exists!!")
+            val stringBuilder: StringBuilder = StringBuilder("Config file not exists!")
+            ctx.result(stringBuilder.toString()).contentType(ContentType.TEXT_PLAIN).status(400)
+            return
+        }
+        val parser = Parser.default()
+        val json: JsonObject = parser.parse(cf.absolutePath) as JsonObject
+        val keys:MutableSet<String> = (json["issuers"] as JsonObject).keys      // keys of issuers
+        if (!keys.contains(issuerId)) {
+            val stringBuilder: StringBuilder = StringBuilder("Issuer ID not found!")
+            ctx.result(stringBuilder.toString()).contentType(ContentType.TEXT_PLAIN).status(400)
+            return
+        }
+        (json["issuers"] as JsonObject).remove(issuerId)
+        // save the new json
+        val mapper = ObjectMapper()
+        mapper.writeValue(File(CONFIG_FILE), json)
+        // return the response
+        ctx.result("Issuer deleted").contentType(ContentType.TEXT_PLAIN).status(200)
     }
 }
