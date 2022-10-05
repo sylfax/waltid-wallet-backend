@@ -235,6 +235,16 @@ object WalletController {
                         ),
                         UserRole.UNAUTHORIZED
                     )
+                    delete(
+                        "{id}", documented(
+                            document().operation {
+                                it.summary("Delete a verifier").addTagsItem("siop")
+                                    .operationId("deleteVerifier")
+                            },
+                            WalletController::deleteVerifier
+                        ),
+                        UserRole.UNAUTHORIZED
+                    )
                 }
                 post("initIssuance", documented(
                     document().operation {
@@ -519,6 +529,39 @@ object WalletController {
         mapper.writeValue(File(CONFIG_FILE), json)
         // return the response
         val result = (json["issuers"] as JsonObject)
+        ctx.json(result).contentType(ContentType.APPLICATION_JSON).status(200)
+    }
+
+    private fun addVerifier(ctx: Context) {
+        // TODO
+    }
+
+    private fun deleteVerifier(ctx: Context) {
+        log.debug { "Deleting a verifier..." }
+        val verifierId = ctx.pathParam("id")
+        log.debug { verifierId }
+        val CONFIG_FILE = "${id.walt.WALTID_DATA_ROOT}/config/wallet-config.json"
+        val cf = File(CONFIG_FILE)
+        if (!cf.exists()) {
+            println("FIle not exists!!")
+            val stringBuilder: StringBuilder = StringBuilder("Config file not exists!")
+            ctx.result(stringBuilder.toString()).contentType(ContentType.TEXT_PLAIN).status(400)
+            return
+        }
+        val parser = Parser.default()
+        val json: JsonObject = parser.parse(cf.absolutePath) as JsonObject
+        val keys:MutableSet<String> = (json["verifiers"] as JsonObject).keys      // keys of issuers
+        if (!keys.contains(verifierId)) {
+            val stringBuilder: StringBuilder = StringBuilder("Verifier ID not found!")
+            ctx.result(stringBuilder.toString()).contentType(ContentType.TEXT_PLAIN).status(400)
+            return
+        }
+        (json["verifiers"] as JsonObject).remove(verifierId)
+        // save the new json
+        val mapper = ObjectMapper()
+        mapper.writeValue(File(CONFIG_FILE), json)
+        // return the response
+        val result = (json["verifiers"] as JsonObject)
         ctx.json(result).contentType(ContentType.APPLICATION_JSON).status(200)
     }
 }
