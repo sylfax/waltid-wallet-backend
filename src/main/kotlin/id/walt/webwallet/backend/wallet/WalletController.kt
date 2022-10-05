@@ -493,6 +493,7 @@ object WalletController {
         val mapper = ObjectMapper()
         mapper.writeValue(File(CONFIG_FILE), json)
         // return the response
-        ctx.result("Issuer deleted").contentType(ContentType.TEXT_PLAIN).status(200)
+        val result = (json["issuers"] as JsonObject)
+        ctx.json(result).contentType(ContentType.APPLICATION_JSON).status(200)
     }
 }
