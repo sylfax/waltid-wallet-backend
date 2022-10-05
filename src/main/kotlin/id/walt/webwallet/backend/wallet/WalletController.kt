@@ -224,6 +224,18 @@ object WalletController {
                         WalletController::issuerMeta),
                         UserRole.UNAUTHORIZED)
                 }
+                path("verifier") {
+                    get(
+                        "list", documented(
+                            document().operation {
+                                it.summary("List known credential verifiers").addTagsItem("siop")
+                                    .operationId("listVerifiers")
+                            },
+                            WalletController::listVerifiers
+                        ),
+                        UserRole.UNAUTHORIZED
+                    )
+                }
                 post("initIssuance", documented(
                     document().operation {
                         it.summary("Initialize credential issuance from selected issuer").addTagsItem("siop")
@@ -378,6 +390,19 @@ object WalletController {
             WalletConfig.config = WalletConfig()
         }
         ctx.json(WalletConfig.config.issuers.values)
+    }
+
+    fun listVerifiers(ctx: Context) {
+        val cf = File(WalletConfig.CONFIG_FILE)
+        if (cf.exists()) {
+            log.debug { "Reloading WalletConfig..." }
+            WalletConfig.config = Klaxon().fieldConverter(ExternalHostnameUrl::class, externalHostnameUrlValueConverter).parse<WalletConfig>(cf) ?: WalletConfig()
+        }
+        else {
+            log.debug { "Wallet config file doesn't exist!!" }
+            WalletConfig.config = WalletConfig()
+        }
+        ctx.json(WalletConfig.config.verifiers.values)
     }
 
     fun issuerMeta(ctx: Context) {

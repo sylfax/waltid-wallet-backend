@@ -10,7 +10,8 @@ import java.io.File
 data class WalletConfig(
   @ExternalHostnameUrl val walletUiUrl: String = "http://localhost:3000",
   @ExternalHostnameUrl val walletApiUrl: String = "http://localhost:3000/api",
-  var issuers: Map<String, OIDCProvider> = mapOf()
+  var issuers: Map<String, OIDCProvider> = mapOf(),
+  var verifiers: Map<String, OIDCProvider> = mapOf()
 ) {
 
   companion object {
