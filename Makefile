@@ -22,7 +22,7 @@ deploy-local-issuer:
 .PHONY: deploy-local-verifier
 deploy-local-verifier:
 	LIST_SSL_ENABLED=false; \
-	WALTID_DATA_ROOT=/Users/nicolas/Documents/DEV/LIST/EBSILUX/local-prod/verifier/issuer-data; \
+	WALTID_DATA_ROOT=/Users/nicolas/Documents/DEV/LIST/EBSILUX/local-prod/verifier/verifier-data; \
 	export LIST_SSL_ENABLED; \
 	export WALTID_DATA_ROOT; \
 	echo $$WALTID_DATA_ROOT; cd $(VERIFIER_BACKEND) && bin/waltid-wallet-backend run -p 9200
@@ -59,5 +59,5 @@ run_issuer_backend: dist cp_2_issuer deploy-local-issuer
 	echo "Build and deploy ISSUER backend"
 
 .PHONY: run_verifier_backend
-run_verifier_backend: dist cp_2_issuer deploy-local-verifier
+run_verifier_backend: dist cp_2_verifier deploy-local-verifier
 	echo "Build and deploy VERIFIER backend"
